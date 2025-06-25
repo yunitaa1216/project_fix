@@ -111,9 +111,10 @@ class Sidebar extends StatelessWidget {
                                     ElevatedButton(
                                       onPressed: () {
                                         Navigator.of(context).pop();
-                                        Navigator.popUntil(
-                                          context, 
-                                          ModalRoute.withName('/'),
+                                        Navigator.pushNamedAndRemoveUntil(
+                                          context,
+                                          '/',
+                                          (route) => false,
                                         );
                                       },
                                       style: ElevatedButton.styleFrom(

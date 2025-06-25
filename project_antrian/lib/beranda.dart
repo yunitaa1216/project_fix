@@ -205,7 +205,7 @@ class _BerandaPageState extends State<BerandaPage> {
     } else if (item == 'Riwayat') {
       Navigator.pushNamed(context, '/riwayat');
     } else if (item == 'Logout') {
-      Navigator.popUntil(context, ModalRoute.withName('/'));
+      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
     }
   }
 
