@@ -7,6 +7,7 @@ import 'package:printing/printing.dart';
 import 'package:pdf/widgets.dart' as pw;   // alias “pw” biar pendek
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart' as pdf;
+import 'package:flutter_tts/flutter_tts.dart';
 
 class AntrianSaatIniPage extends StatefulWidget {
   const AntrianSaatIniPage({Key? key}) : super(key: key);
@@ -19,10 +20,12 @@ class _AntrianSaatIniPageState extends State<AntrianSaatIniPage> {
   late AntrianViewModel viewModel;
   bool _isLoading = true;
   List<Map<String, String>> _dataAntrian = [];
-
+    final FlutterTts _tts = FlutterTts();
+   
   @override
   void initState() {
     super.initState();
+    _initVoice();
     viewModel = Provider.of<AntrianViewModel>(context, listen: false);
     load();
   }
@@ -46,6 +49,31 @@ class _AntrianSaatIniPageState extends State<AntrianSaatIniPage> {
     } catch (_) {
       return pdf.PdfColors.white;
     }
+  }
+
+  Future<void> _initVoice() async {
+    final voices = await _tts.getVoices;
+    final selectedVoice = voices.cast<Map>()
+        .firstWhere(
+          (e) => e['locale'] == 'id-ID' && (e['name']?.toLowerCase().contains('female') ?? false),
+          orElse: () => {},
+        );
+
+    if (selectedVoice.isNotEmpty) {
+      await _tts.setVoice(selectedVoice);
+    } else {
+      await _tts.setLanguage('id-ID');
+    }
+
+    await _tts.setPitch(1.0);
+    await _tts.setSpeechRate(0.9);
+  }
+
+  /* ---------- panggil antrian ---------- */
+  Future<void> _panggilAntrian(int no, String nama, String kategori) async {
+    final loket = kategori.toLowerCase() == 'prioritas' ? 2 : 1;
+    final msg   = 'Antrian atas nama $nama, silakan ke loket $loket.';
+    await _tts.speak(msg);
   }
 
 
@@ -171,7 +199,7 @@ class _AntrianSaatIniPageState extends State<AntrianSaatIniPage> {
                     dataAntrian: _dataAntrian,
                     dataRiwayat: const [],
                     onRiwayatUpdate: (_) {},
-                    onPanggilAntrian: (_, __, ___) {},
+                    onPanggilAntrian: _panggilAntrian,
                     onStatusChanged: (idx, status) async {
   final uuid = _dataAntrian[idx]['uuid']!;
   final ok = await viewModel.updateStatusAntrian(
