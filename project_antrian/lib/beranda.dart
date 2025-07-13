@@ -61,7 +61,7 @@ class _BerandaPageState extends State<BerandaPage> {
   'Pembuatan Kartu Keluarga'    : statistik!.kk,
   'Akta Kelahiran'              : statistik!.aktaKelahiran,
   'Akta Kematian'               : statistik!.aktaKematian,
-  'Kartu Keluarga/KTP'          : statistik!.layananLainnya, // ← atau properti khusus kalau ada
+  'Kartu Keluarga/KTP'          : statistik!.pelayananKkKtp, // ← atau properti khusus kalau ada
   'KIA'                         : statistik!.kia,           // tambahkan di model
   'SKPWNI'                      : statistik!.skpwni,        //  ”
   'Perekaman'                   : statistik!.perekaman,     //  ”

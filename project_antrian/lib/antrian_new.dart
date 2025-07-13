@@ -27,56 +27,88 @@ class _AntrianSaatIniPageState extends State<AntrianSaatIniPage> {
     load();
   }
 
+  pdf.PdfColor _parseHexColor(String? hex) {            // ← di‑prefiks
+  if (hex == null || hex.isEmpty) return pdf.PdfColors.white;
+  hex = hex.replaceFirst('#', '');
+  final r = int.parse(hex.substring(0, 2), radix: 16);
+  final g = int.parse(hex.substring(2, 4), radix: 16);
+  final b = int.parse(hex.substring(4, 6), radix: 16);
+  return pdf.PdfColor.fromInt(0xff000000 | (r << 16) | (g << 8) | b);
+}
+
+
   Future<void> _printTicket(Map<String, String> item) async {
   final doc = pw.Document();
 
+  // Default values jika data kosong
+  final nomor = item['nomor'] ?? item['uuid']?.substring(0, 6).toUpperCase() ?? '???';
+  final layanan = item['layanan']?.toUpperCase() ?? 'LAYANAN';
+  final alasan = item['reason'] ?? '';
+  final warnaHex = item['color'] ?? '#000000';
+
+  final pdf.PdfColor penandaColor = _parseHexColor(warnaHex);
+  final bool tampilBulatan = warnaHex.toUpperCase() != '#FFFFFF';
+
   final pageFormat = pdf.PdfPageFormat(
-  58 * pdf.PdfPageFormat.mm,
-  double.infinity, // tinggi fleksibel
-  marginAll: 4 * pdf.PdfPageFormat.mm,
-);
+    58 * pdf.PdfPageFormat.mm,
+    double.infinity,
+    marginAll: 4 * pdf.PdfPageFormat.mm,
+  );
 
   final now = DateFormat('dd/MM/yyyy – HH:mm').format(DateTime.now());
 
   doc.addPage(
     pw.Page(
       pageFormat: pageFormat,
-      build: (context) => pw.Column(
+      build: (ctx) => pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.center,
         children: [
-          pw.Text(
-            'DISDUKCAPIL SULTENG',
-            style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
-            textAlign: pw.TextAlign.center,
-          ),
+          if (tampilBulatan)
+            pw.Container(
+              width: 12,
+              height: 12,
+              decoration: pw.BoxDecoration(
+                color: penandaColor,
+                shape: pw.BoxShape.circle,
+              ),
+            ),
+          if (tampilBulatan) pw.SizedBox(height: 6),
           pw.SizedBox(height: 6),
-          pw.Text(
-            item['nomor'] ?? item['uuid']!.substring(0, 6).toUpperCase(),
-            style: pw.TextStyle(fontSize: 26, fontWeight: pw.FontWeight.bold),
-          ),
+          pw.Text('DISDUKCAPIL SULTENG',
+              style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 6),
+          pw.Divider(thickness: .8),
+          pw.SizedBox(height: 6),
+
+          pw.Text(nomor,
+              style: pw.TextStyle(fontSize: 30, fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 4),
-          pw.Text(
-            item['layanan']!.toUpperCase(),
-            style: pw.TextStyle(fontSize: 10),
-            textAlign: pw.TextAlign.center,
-          ),
-          pw.SizedBox(height: 6),
-          pw.Text(now, style: pw.TextStyle(fontSize: 8)),
+          pw.Text(layanan,
+              textAlign: pw.TextAlign.center,
+              style: const pw.TextStyle(fontSize: 10)),
+
+          if (alasan.isNotEmpty) ...[
+            pw.SizedBox(height: 2),
+            pw.Text('(Alasan: $alasan)',
+                textAlign: pw.TextAlign.center,
+                style: const pw.TextStyle(fontSize: 8)),
+          ],
+
+          pw.SizedBox(height: 8),
+          pw.Divider(thickness: .5),
+          pw.SizedBox(height: 4),
+          pw.Text(now, style: const pw.TextStyle(fontSize: 8)),
         ],
       ),
     ),
   );
 
-   await Printing.layoutPdf(
-  name: 'Tiket Antrian 58 mm',
-  onLayout: (_) async => doc.save(),   // pageFormat diambil dari `doc`
-);
-
-  // await Printing.sharePdf(
-  //   bytes: await doc.save(),
-  //   filename: 'tiket_antrian_58mm.pdf',
-  // );
+  await Printing.layoutPdf(
+    name: 'Tiket Antrian 58 mm',
+    onLayout: (_) async => doc.save(),
+  );
 }
+
 
   Future<void> load() async {
     await viewModel.loadAntrian();

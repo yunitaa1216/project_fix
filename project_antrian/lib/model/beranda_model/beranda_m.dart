@@ -7,7 +7,7 @@ class StatistikData {
   final int kk;
   final int aktaKelahiran;
   final int aktaKematian;
-  final int layananLainnya;   // ←  dipakai utk “Pelayanan KK/KTP”
+  final int pelayananKkKtp;   // ←  dipakai utk “Pelayanan KK/KTP”
   final int kia;
   final int skpwni;
   final int perekaman;
@@ -19,7 +19,7 @@ class StatistikData {
     required this.kk,
     required this.aktaKelahiran,
     required this.aktaKematian,
-    required this.layananLainnya,
+    required this.pelayananKkKtp,
     required this.kia,
     required this.skpwni,
     required this.perekaman,
@@ -33,7 +33,7 @@ class StatistikData {
       kk              : json['kk']                ?? 0,
       aktaKelahiran   : json['akta_kelahiran']    ?? 0,
       aktaKematian    : json['akta_kematian']     ?? 0,
-      layananLainnya  : json['layanan_lainnya']   ?? 0,
+     pelayananKkKtp   : json['pelayanan_kk_ktp']   ?? 0,
       kia             : json['kia']               ?? 0,
       skpwni          : json['skpwni']            ?? 0,
       perekaman       : json['perekaman']         ?? 0,

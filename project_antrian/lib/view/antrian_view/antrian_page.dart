@@ -130,7 +130,7 @@ tanggalController.text = formattedDate;
     telepon: dataUntukAPI['telepon']!,
     jenisLayanan: dataUntukAPI['jenis_layanan']!,
     kategori: dataUntukAPI['kategori']!,
-    reason     : dataUntukAPI['reason']!,
+    reason     : dataUntukAPI['reason'],
   );
 
   if (uuid != null) {

@@ -74,6 +74,7 @@ class AntrianViewModel extends ChangeNotifier {
       'kategori': e['kategori']?.toString() ?? defaultKategori,
       'status': e['status']?.toString() ?? 'Menunggu',
       'tanggal': formatted,
+      'color'   : (e['color'] ?? '#FFFFFF').toString().toUpperCase(),
     };
   }
 
@@ -91,6 +92,7 @@ class AntrianViewModel extends ChangeNotifier {
     required String jenisLayanan,
     required String kategori,
     String? reason,
+    String? color,
   }) async {
     final url = Uri.parse('http://localhost:3000/queue/create');
     final token = await _getToken();
@@ -106,9 +108,13 @@ class AntrianViewModel extends ChangeNotifier {
     };
 
     // backend mewajibkan reason HANYA ketika jenis layanan pembuatan ktp
-    if (jenisLayanan == 'pembuatan ktp') {
-      payload['reason'] = reason; // ⬅️ WAJIB ada
-    }
+if (jenisLayanan == 'pembuatan ktp' && reason != null) {
+  payload['reason'] = reason;
+}
+
+if (color != null) {
+  payload['color'] = color;   // ⇠ Masukkan warna ke payload
+}
     /* ──────────────────────────────────────────── */
 
     try {
