@@ -3,6 +3,7 @@ import 'package:project_antrian/widgets/sidebar.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:intl/intl.dart';
 
 class RiwayatPage extends StatefulWidget {
   const RiwayatPage({super.key});
@@ -27,44 +28,56 @@ class _RiwayatPageState extends State<RiwayatPage> {
     fetchRiwayatData();
   }
 
-  Future<void> fetchRiwayatData() async {
-    try {
-      final response =
-          await http.get(Uri.parse('http://localhost:3000/queue/riwayat'));
+ Future<void> fetchRiwayatData() async {
+  try {
+    final response =
+        await http.get(Uri.parse('http://localhost:3000/queue/riwayat'));
 
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
 
-      // Pastikan json['data'] adalah List
+      // Pastikan json['response'] adalah List
       List<dynamic> data = json['response'];
       print(jsonDecode(response.body));
 
-        setState(() {
-          _riwayatData = data
-              .where((item) => item['status'] == 'selesai')
-              .map<Map<String, String>>((item) => {
-                    'nama': item['nama'] ?? '',
-                    'nik': item['nik'] ?? '',
-                    'alamat': item['alamat'] ?? '',
-                    'layanan': item['jenis_layanan'] ?? '',
-  'noHp': item['telepon'] ?? '', 
-                    'kategori': item['kategori'] ?? '',
-                    'status': item['status'] ?? ''
-                  })
-              .toList();
-          _isLoading = false;
-        });
-      } else {
-        throw Exception('Failed to load data');
-      }
-    } catch (e) {
-      print('Error fetching data: $e');
       setState(() {
+        _riwayatData = data
+            .where((item) => item['status'] == 'selesai')
+            .map<Map<String, String>>((item) {
+          // Format tanggal menjadi yy/MM/dd
+          String formattedDate = '';
+          if (item['date'] != null) {
+            try {
+              final rawDate = DateTime.parse(item['date']);
+              formattedDate = DateFormat('dd/MM/yyyy').format(rawDate);
+            } catch (e) {
+              print('Error parsing date: $e');
+            }
+          }
+
+          return {
+            'nama': item['nama'] ?? '',
+            'nik': item['nik'] ?? '',
+            'alamat': item['alamat'] ?? '',
+            'layanan': item['jenis_layanan'] ?? '',
+            'noHp': item['telepon'] ?? '',
+            'kategori': item['kategori'] ?? '',
+            'status': item['status'] ?? '',
+            'tanggal': formattedDate, // Gunakan tanggal yang diformat
+          };
+        }).toList();
         _isLoading = false;
       });
+    } else {
+      throw Exception('Failed to load data');
     }
+  } catch (e) {
+    print('Error fetching data: $e');
+    setState(() {
+      _isLoading = false;
+    });
   }
-
+}
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;

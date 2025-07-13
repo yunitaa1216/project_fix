@@ -69,6 +69,7 @@ class AntrianDataTable extends StatelessWidget {
         DataColumn(label: Text('No')),
         DataColumn(label: Text('Nama')),
         DataColumn(label: Text('Jenis Layanan')),
+        DataColumn(label: Text('reason')),
         DataColumn(label: Text('Kategori')),
         DataColumn(label: Text('No HP')),
         DataColumn(label: Text('Status')),
@@ -82,6 +83,7 @@ class AntrianDataTable extends StatelessWidget {
             DataCell(Text('${index + 1}')),
             DataCell(Text(dataAntrian[index]['nama'] ?? '')),
             DataCell(Text(dataAntrian[index]['layanan'] ?? '')),
+            DataCell(Text(dataAntrian[index]['reason'] ?? '')),
             DataCell(Text(dataAntrian[index]['kategori'] ?? '')),
             DataCell(Text(dataAntrian[index]['noHp'] ?? '')),
             DataCell(

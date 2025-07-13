@@ -21,7 +21,8 @@ class RiwayatViewModel {
           'layanan': item['layanan'] ?? '',
           'noHp': item['noHp'] ?? '',
           'kategori': item['kategori'] ?? '',
-          'status': item['status'] ?? ''
+          'status': item['status'] ?? '',
+          'date': item['date'] ?? '',
         };
       }).toList();
     } else {
