@@ -57,12 +57,15 @@ class _BerandaPageState extends State<BerandaPage> {
     }
 
     final layananData = {
-      'KTP': statistik!.ktp,
-      'Akte kelahiran': statistik!.aktaKelahiran,
-      'Akte kematian': statistik!.aktaKematian,
-      'Kartu keluarga': statistik!.kk,
-      'Layanan lainnya': statistik!.layananLainnya,
-    };
+  'Pembuatan KTP'               : statistik!.ktp,
+  'Pembuatan Kartu Keluarga'    : statistik!.kk,
+  'Akta Kelahiran'              : statistik!.aktaKelahiran,
+  'Akta Kematian'               : statistik!.aktaKematian,
+  'Kartu Keluarga/KTP'          : statistik!.layananLainnya, // ← atau properti khusus kalau ada
+  'KIA'                         : statistik!.kia,           // tambahkan di model
+  'SKPWNI'                      : statistik!.skpwni,        //  ”
+  'Perekaman'                   : statistik!.perekaman,     //  ”
+};
 
     int maxValue = layananData.values.reduce((a, b) => a > b ? a : b);
 
@@ -116,49 +119,61 @@ class _BerandaPageState extends State<BerandaPage> {
                   ],
                 ),
           const SizedBox(height: 32),
-          const Text(
+          Text(
             'Distribusi Jenis Layanan',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 16, color: Colors.grey[700]),
           ),
           const SizedBox(height: 16),
-          Expanded(
-            child: ListView(
-              children: layananData.entries.map((entry) {
-                double barWidth = (entry.value / maxValue) * 300;
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    children: [
-                      SizedBox(width: 140, child: Text(entry.key, style: const TextStyle(fontSize: 14))),
-                      Expanded(
-                        child: Stack(
-                          children: [
-                            Container(
-                              height: 20,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                            Container(
-                              height: 20,
-                              width: barWidth,
-                              decoration: BoxDecoration(
-                                color: Color(0xFFFFF170),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(entry.value.toString()),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
+         SizedBox(
+  height: 240,
+  child: SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: layananData.entries.map((entry) {
+        const double maxBarHeight = 160;
+        double barHeight = (entry.value / maxValue) * maxBarHeight;
+        if (entry.value > 0 && barHeight < 8) {
+          barHeight = 8;
+        }
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text(
+                entry.value.toString(),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                width: 28,
+                height: barHeight,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFC107),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: 80,
+                child: Text(
+                  entry.key,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 11),
+                  overflow: TextOverflow.visible,
+                  maxLines: 2,
+                  softWrap: true,
+                ),
+              ),
+            ],
           ),
+        );
+      }).toList(),
+    ),
+  ),
+),
         ],
       ),
     );
@@ -202,6 +217,8 @@ class _BerandaPageState extends State<BerandaPage> {
   void _handleNavigation(BuildContext context, String item) {
     if (item == 'Input Antrian') {
       Navigator.pushNamed(context, '/antrian');
+    } else if (item == 'Daftar Antrian') {
+      Navigator.pushNamed(context, '/antriannew');
     } else if (item == 'Riwayat') {
       Navigator.pushNamed(context, '/riwayat');
     } else if (item == 'Logout') {

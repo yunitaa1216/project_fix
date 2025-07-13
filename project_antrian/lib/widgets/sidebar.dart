@@ -39,6 +39,13 @@ class Sidebar extends StatelessWidget {
               onTap: () => onItemSelected?.call('Input Antrian'),
             ),
             SidebarItem(
+  icon: Icons.list_alt,
+  label: 'Daftar Antrian',
+  onTap: () {
+    Navigator.of(context).pushNamed('/antriannew');
+  },
+),
+            SidebarItem(
               icon: Icons.history,
               label: 'Riwayat',
               onTap: () => onItemSelected?.call('Riwayat'),

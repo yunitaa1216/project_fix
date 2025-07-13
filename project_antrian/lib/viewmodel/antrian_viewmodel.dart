@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AntrianViewModel extends ChangeNotifier {
   List<Map<String, String>> _antrian = [];
@@ -78,6 +79,11 @@ class AntrianViewModel extends ChangeNotifier {
       'status': e['status']?.toString() ?? 'Menunggu',
     };
   }
+  Future<String?> _getToken() async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+  return token;
+}
 
   Future<String?> tambahAntrianAPI({
   required String nama,
@@ -88,35 +94,47 @@ class AntrianViewModel extends ChangeNotifier {
   required String kategori,
 }) async {
   final url = Uri.parse('http://localhost:3000/queue/create');
+
   try {
+    final token = await _getToken();
     final response = await http.post(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
       body: jsonEncode({
-        'nama': nama,
-        'nik': nik,
-        'alamat': alamat,
-        'telepon': telepon,
+        'nama'         : nama,
+        'nik'          : nik,
+        'alamat'       : alamat,
+        'telepon'      : telepon,
         'jenis_layanan': jenisLayanan,
-        'kategori': kategori,
+        'kategori'     : kategori,
       }),
     );
 
     debugPrint('Response status: ${response.statusCode}');
-    debugPrint('Response body: ${response.body}');
+    debugPrint('Response body  : ${response.body}');
 
     if (response.statusCode == 201) {
-      final data = jsonDecode(response.body);
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
 
-      if (data['uuid'] != null) {
-        debugPrint('✅ Berhasil tambah antrian dengan UUID: ${data['uuid']}');
-        return data['uuid'];
+      // ── Cari uuid di dua lokasi yang mungkin ────────────────────────────
+      String? uuid = data['uuid'] as String?;
+      if (uuid == null && data['response'] is Map) {
+        uuid = (data['response'] as Map)['uuid'] as String?;
+      }
+      // ────────────────────────────────────────────────────────────────────
+
+      if (uuid != null) {
+        debugPrint('✅ Berhasil tambah antrian; UUID = $uuid');
+        return uuid;      // ← sukses dengan uuid
       } else {
-        debugPrint('❌ Response sukses tapi uuid tidak ditemukan');
-        return null;
+        debugPrint('ℹ️ Berhasil tambah antrian; server tak kirim uuid');
+        return null;      // ← sukses, tapi tanpa uuid
       }
     } else {
-      debugPrint('❌ Gagal tambah antrian, status code: ${response.statusCode}');
+      debugPrint('❌ Gagal tambah antrian, status code: ${response.statusCode}');
       return null;
     }
   } catch (e, stackTrace) {
@@ -127,34 +145,44 @@ class AntrianViewModel extends ChangeNotifier {
 }
 
   Future<bool> updateStatusAntrian({
-    required String uuid,
-    required String statusBaru,
-  }) async {
-    final url = Uri.parse('http://localhost:3000/queue/update/$uuid');
-    try {
-      final response = await http.patch(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'status': statusBaru}),
-      );
+  required String uuid,
+  required String statusBaru,
+}) async {
+  final url   = Uri.parse('http://localhost:3000/queue/update/$uuid');
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');          // ← ambil token
 
-      if (response.statusCode == 200) {
-        // Optional: Update lokal list tanpa reload
-        final index = _antrian.indexWhere((item) => item['uuid'] == uuid);
-        if (index != -1) {
-          _antrian[index]['status'] = statusBaru;
-        }
-        notifyListeners();
-        return true;
-      } else {
-        _error = 'Gagal update status: ${response.statusCode} - ${response.body}';
-        debugPrint(_error);
-        return false;
-      }
-    } catch (e) {
-      _error = 'Error update status: $e';
-      debugPrint(_error);
+  if (token == null) {
+    _error = 'Token kosong, login ulang terlebih dahulu';
+    notifyListeners();
+    return false;
+  }
+
+  try {
+    final response = await http.patch(
+      url,
+      headers: {
+        'Content-Type' : 'application/json',
+        'Authorization': 'Bearer $token',        // ← kirim token
+      },
+      body: jsonEncode({'status': statusBaru}),
+    );
+
+    if (response.statusCode == 200) {
+      final index = _antrian.indexWhere((e) => e['uuid'] == uuid);
+      if (index != -1) _antrian[index]['status'] = statusBaru;
+      notifyListeners();
+      return true;
+    } else {
+      _error =
+          'Gagal update status: ${response.statusCode} - ${response.body}';
+      notifyListeners();
       return false;
     }
+  } catch (e) {
+    _error = 'Error update status: $e';
+    notifyListeners();
+    return false;
   }
+}
 }

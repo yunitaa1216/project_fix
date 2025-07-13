@@ -5,8 +5,12 @@ class AntrianForm extends StatefulWidget {
   final TextEditingController nikController;
   final TextEditingController alamatController;
   final TextEditingController nomorHpController;
+  final TextEditingController tanggalController;
   final String selectedLayanan;
   final String selectedKategori;
+  final String? selectedReason;                 // <— NEW
+final List<String> alasanKTP;                 // <— NEW
+final Function(String?) onReasonChanged;      // <— NEW
   final Function(String?) onLayananChanged;
   final Function(String?) onKategoriChanged;
   final VoidCallback onTambahPressed;
@@ -17,20 +21,24 @@ class AntrianForm extends StatefulWidget {
   final FocusNode nomorHpFocus;
 
   AntrianForm({
-    required this.namaController,
-    required this.nikController,
-    required this.alamatController,
-    required this.nomorHpController,
-    required this.selectedLayanan,
-    required this.selectedKategori,
-    required this.onLayananChanged,
-    required this.onKategoriChanged,
-    required this.onTambahPressed,
-    required this.namaFocus,
-    required this.nikFocus,
-    required this.alamatFocus,
-    required this.nomorHpFocus,
-  });
+  required this.namaController,
+  required this.nikController,
+  required this.alamatController,
+  required this.nomorHpController,
+  required this.selectedLayanan,
+  required this.selectedKategori,
+  required this.onLayananChanged,
+  required this.onKategoriChanged,
+  required this.tanggalController,
+  required this.onTambahPressed,
+  required this.selectedReason,          // Hanya ini yang perlu ada
+  required this.alasanKTP,
+  required this.onReasonChanged,
+  required this.namaFocus,
+  required this.nikFocus,
+  required this.alamatFocus,
+  required this.nomorHpFocus,
+});
 
   @override
   State<AntrianForm> createState() => _AntrianFormState();
@@ -45,7 +53,10 @@ class _AntrianFormState extends State<AntrianForm> {
     'Pembuatan Kartu Keluarga': 'pembuatan kartu keluarga',
     'Akta Kelahiran': 'akta kelahiran',
     'Akta Kematian': 'akta kematian',
-    'Layanan Lainnya': 'layanan lainnya',
+    'Pelayanan Kartu Keluarga/KTP': 'pelayanan kartu keluarga/ktp',
+    'KIA': 'kia',
+    'SKPWNI': 'skpwni',
+    'Perekaman': 'perekaman'
   };
 
   final Map<String, String> kategoriMap = {
@@ -57,7 +68,14 @@ class _AntrianFormState extends State<AntrianForm> {
   setState(() {
     _autovalidateMode = AutovalidateMode.always;
   });
-  
+
+  if (widget.selectedLayanan == 'pembuatan ktp' && (widget.selectedReason == null || widget.selectedReason!.isEmpty)) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Pilih alasan pembuatan KTP')),
+    );
+    return;
+  }
+
   if (_formKey.currentState!.validate()) {
     widget.onTambahPressed();
   }
@@ -84,6 +102,11 @@ class _AntrianFormState extends State<AntrianForm> {
                 childAspectRatio: 6,
                 physics: NeverScrollableScrollPhysics(),
                 children: [
+                  _buildReadOnlyField(
+    'Tanggal',
+    widget.tanggalController,
+    icon: Icons.calendar_today,
+  ),
                   _buildTextField(
                     'Nama Lengkap',
                     widget.namaController,
@@ -145,6 +168,14 @@ class _AntrianFormState extends State<AntrianForm> {
                     widget.onKategoriChanged,
                     icon: Icons.group,
                   ),
+                  if (widget.selectedLayanan == 'pembuatan ktp')
+                    _buildDropdown(
+                      'Alasan',
+                      {for (var a in widget.alasanKTP) a: a.toLowerCase()},
+                      widget.selectedReason,
+                      widget.onReasonChanged,
+                      icon: Icons.help_outline,
+                    ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -286,4 +317,35 @@ class _AntrianFormState extends State<AntrianForm> {
       ),
     );
   }
+
+Widget _buildReadOnlyField(
+  String label,
+  TextEditingController controller, {
+  IconData? icon,
+}) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: TextFormField(
+      controller: controller,
+      readOnly: true,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Color(0xFF292794)),
+        prefixIcon:
+            icon != null ? Icon(icon, color: Color(0xFF292794)) : null,
+        enabledBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: Color(0xFF292794)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: Color(0xFF292794), width: 2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+      style: const TextStyle(color: Color(0xFF292794)),
+    ),
+  );
+}
 }

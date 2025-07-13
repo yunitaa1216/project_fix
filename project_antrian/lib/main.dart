@@ -1,3 +1,4 @@
+import 'package:project_antrian/antrian_new.dart';
 import 'package:project_antrian/beranda.dart';
 import 'package:project_antrian/dropdown.dart';
 import 'package:project_antrian/form_field.dart';
@@ -68,6 +69,7 @@ class _MyAntrianAppState extends State<MyAntrianApp> {
           dataRiwayat: dataRiwayat,
         ),
     '/riwayat': (context) => RiwayatPage(),
+    '/antriannew': (context) => AntrianSaatIniPage()
   },
 );
   }

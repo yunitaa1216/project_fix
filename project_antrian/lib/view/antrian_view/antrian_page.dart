@@ -6,10 +6,10 @@ import 'package:project_antrian/viewmodel/antrian_viewmodel.dart';
 import 'package:project_antrian/widgets/responsive_layout.dart';
 import 'package:project_antrian/widgets/sidebar.dart';
 import 'package:provider/provider.dart';
-// import '../widgets/responsive_layout.dart';
-// import '../widgets/antrian_form.dart';
-// import '../widgets/antrian_data_table.dart';
-// import '../models/antrian_model.dart';
+import 'package:printing/printing.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:intl/intl.dart';
+
 
 class AntrianPage extends StatefulWidget {
   final List<Map<String, String>> dataRiwayat;
@@ -30,9 +30,12 @@ class _AntrianPageState extends State<AntrianPage> {
   final TextEditingController nikController = TextEditingController();
   final TextEditingController alamatController = TextEditingController();
   final TextEditingController nomorHpController = TextEditingController();
+  final TextEditingController tanggalController = TextEditingController();
+
   
   String selectedKategori = 'umum';
 String selectedLayanan = 'pembuatan ktp';
+String? selectedReason; 
 
   List<Map<String, String>> dataAntrian = [];
   late List<Map<String, String>> dataRiwayat;
@@ -41,11 +44,32 @@ final FocusNode nikFocus = FocusNode();
 final FocusNode alamatFocus = FocusNode();
 final FocusNode nomorHpFocus = FocusNode();
 late AntrianViewModel viewModel;
+final List<String> alasanKTP = [              // ⬅️  NEW
+    'Perubahan Data',
+    'Rusak',
+    'Hilang',
+    'Luar Daerah',
+  ];
+
+String _namaBulanIndonesia(int bulan) {
+  const bulanIndonesia = [
+    '', // index ke-0 tidak digunakan
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+  return bulanIndonesia[bulan];
+}
 
   @override
   void initState() {
     super.initState();
     setVoice();
+    final now = DateTime.now();
+final formattedDate = "${now.day.toString().padLeft(2, '0')} "
+    "${_namaBulanIndonesia(now.month)} "
+    "${now.year}";
+tanggalController.text = formattedDate;
+
     dataRiwayat = widget.dataRiwayat;
      viewModel = Provider.of<AntrianViewModel>(context, listen: false);
      Future.microtask(() async {
@@ -66,6 +90,7 @@ late AntrianViewModel viewModel;
   nikFocus.dispose();
   alamatFocus.dispose();
   nomorHpFocus.dispose();
+  tanggalController.dispose();
     super.dispose();
   }
 
@@ -88,12 +113,13 @@ late AntrianViewModel viewModel;
 
     void tambahAntrian() async {
   final dataUntukAPI = {
-    'nama': namaController.text,
-    'nik': nikController.text,
-    'alamat': alamatController.text,
-    'telepon': nomorHpController.text,
+    'nama'         : namaController.text,
+    'nik'          : nikController.text,
+    'alamat'       : alamatController.text,
+    'telepon'      : nomorHpController.text,
     'jenis_layanan': selectedLayanan.toLowerCase(),
-    'kategori': selectedKategori.toLowerCase(),
+    'kategori'     : selectedKategori.toLowerCase(),
+    'reason'       : selectedReason ?? '',          // ← 1️⃣ kirim ke API
   };
 
   String? uuid = await viewModel.tambahAntrianAPI(
@@ -103,6 +129,7 @@ late AntrianViewModel viewModel;
     telepon: dataUntukAPI['telepon']!,
     jenisLayanan: dataUntukAPI['jenis_layanan']!,
     kategori: dataUntukAPI['kategori']!,
+    reason     : dataUntukAPI['reason']!,
   );
 
   if (uuid != null) {
@@ -115,15 +142,18 @@ late AntrianViewModel viewModel;
         'layanan': dataUntukAPI['jenis_layanan']!,
         'noHp': dataUntukAPI['telepon']!,
         'kategori': dataUntukAPI['kategori']!,
+        'tanggal' : tanggalController.text, 
+        'reason'  : selectedReason ?? '', 
         'status': 'Menunggu',
       });
-
+      selectedReason = null; 
       namaController.clear();
       nikController.clear();
       alamatController.clear();
       nomorHpController.clear();
       selectedLayanan = 'pembuatan ktp';
       selectedKategori = 'umum';
+      selectedReason   = null; 
     });
   } else {
   ScaffoldMessenger.of(context).showSnackBar(
@@ -157,25 +187,75 @@ late AntrianViewModel viewModel;
     await flutterTts.speak(pesan);
   }
 
+  Future<void> _printTicket(Map<String, String> item) async {
+  final doc = pw.Document();
+  final now = DateFormat('dd/MM/yyyy – HH:mm').format(DateTime.now());
+
+  doc.addPage(
+    pw.Page(
+      build: (context) => pw.Center(
+        child: pw.Container(
+          padding: const pw.EdgeInsets.all(24),
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(width: 2),
+            borderRadius: pw.BorderRadius.circular(8),
+          ),
+          child: pw.Column(
+            mainAxisSize: pw.MainAxisSize.min,
+            children: [
+              pw.Text('DISDUKCAPIL SULTENG',
+                  style: pw.TextStyle(
+                      fontSize: 14, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 12),
+              pw.Text(
+                  item['nomor'] ??
+                      item['uuid']!.substring(0, 6).toUpperCase(),
+                  style: pw.TextStyle(
+                      fontSize: 32, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 8),
+              pw.Text(item['layanan']!.toUpperCase(),
+                  style: pw.TextStyle(fontSize: 16)),
+              pw.SizedBox(height: 12),
+              pw.Text(now, style: const pw.TextStyle(fontSize: 10)),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+
+  await Printing.layoutPdf(onLayout: (format) async => doc.save());
+}
+
   @override
   Widget build(BuildContext context) {
     return ResponsiveLayout(
       isAntrianPage: true,
       mobileBody: Scaffold(
-        drawer: Drawer(child: Sidebar(onItemSelected: (String page) {
-  setState(() {
-    currentPage = page;
-  });
+        drawer: Drawer(
+  child: Sidebar(
+    onItemSelected: (String page) {
+      setState(() => currentPage = page);
 
-  // Navigasi ke halaman lain jika diperlukan
-  if (page == 'Beranda') {
-    Navigator.pushReplacementNamed(context, '/beranda');
-  } else if (page == 'Antrian') {
-    Navigator.pushReplacementNamed(context, '/antrian');
-  } else if (page == 'Riwayat') {
-    Navigator.pushReplacementNamed(context, '/riwayat');
-  }
-})
+      switch (page) {
+        case 'Beranda':
+          Navigator.pushReplacementNamed(context, '/beranda');
+          break;
+        case 'Input Antrian':
+          Navigator.pushReplacementNamed(context, '/antrian');
+          break;
+        case 'Daftar Antrian':
+          Navigator.pushReplacementNamed(context, '/antriannew');
+          break;
+        case 'Riwayat':
+          Navigator.pushReplacementNamed(context, '/riwayat');
+          break;
+        case 'Logout':
+          Navigator.pushNamedAndRemoveUntil(context, '/', (r) => false);
+          break;
+      }
+    },
+  ),
         ),
         appBar: AppBar(
           backgroundColor: Color(0xFF292794),
@@ -197,20 +277,29 @@ late AntrianViewModel viewModel;
       desktopBody: Scaffold(
   body: Row(
     children: [
-      Sidebar(onItemSelected: (String page) {
-  setState(() {
-    currentPage = page;
-  });
+      Sidebar(
+  onItemSelected: (String page) {
+    setState(() => currentPage = page);
 
-  // Navigasi ke halaman lain jika diperlukan
-  if (page == 'Beranda') {
-    Navigator.pushReplacementNamed(context, '/beranda');
-  } else if (page == 'Antrian') {
-    Navigator.pushReplacementNamed(context, '/antrian');
-  } else if (page == 'Riwayat') {
-    Navigator.pushReplacementNamed(context, '/riwayat');
-  }
-}),
+    switch (page) {
+      case 'Beranda':
+        Navigator.pushReplacementNamed(context, '/beranda');
+        break;
+      case 'Input Antrian':
+        Navigator.pushReplacementNamed(context, '/antrian');
+        break;
+      case 'Daftar Antrian':
+        Navigator.pushReplacementNamed(context, '/antriannew');
+        break;
+      case 'Riwayat':
+        Navigator.pushReplacementNamed(context, '/riwayat');
+        break;
+      case 'Logout':
+        Navigator.pushNamedAndRemoveUntil(context, '/', (r) => false);
+        break;
+    }
+  },
+),
       Expanded(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
@@ -248,6 +337,7 @@ late AntrianViewModel viewModel;
             nikController: nikController,
             alamatController: alamatController,
             nomorHpController: nomorHpController,
+            tanggalController: tanggalController,
             selectedLayanan: selectedLayanan,
             selectedKategori: selectedKategori,
             onLayananChanged: (val) => setState(() => selectedLayanan = val!),
@@ -259,64 +349,6 @@ late AntrianViewModel viewModel;
   nomorHpFocus: nomorHpFocus,
           ),
           
-          const SizedBox(height: 40),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.list_alt, color: Color(0xFF292794)),
-                SizedBox(width: 8),
-                Text(
-                  'Antrian Saat Ini',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF292794),
-                    letterSpacing: 1.0,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black12,
-                        offset: Offset(1, 1),
-                        blurRadius: 2,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          
-          AntrianDataTable(
-            dataAntrian: dataAntrian,
-            dataRiwayat: dataRiwayat,
-            onRiwayatUpdate: widget.onRiwayatUpdate,
-            onPanggilAntrian: panggilAntrian,
-            onStatusChanged: (index, newStatus) async {
-  final uuid = dataAntrian[index]['uuid']!;
-  final sukses = await viewModel.updateStatusAntrian(
-    uuid: uuid,
-    statusBaru: newStatus!,
-  );
-
-  if (sukses) {
-    setState(() {
-      if (newStatus == 'Selesai') {
-        dataRiwayat.add(dataAntrian[index]);
-        widget.onRiwayatUpdate(dataRiwayat);
-        dataAntrian.removeAt(index);
-      } else {
-        dataAntrian[index]['status'] = newStatus!;
-      }
-    });
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Gagal mengupdate status')),
-    );
-  }
-}
-          ),
         ],
       ),
     );

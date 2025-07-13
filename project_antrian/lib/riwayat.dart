@@ -190,6 +190,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                                     ),
                                     columns: const [
                                       DataColumn(label: Text('No')),
+                                      DataColumn(label: Text('Tanggal')), 
                                       DataColumn(label: Text('Nama')),
                                       DataColumn(label: Text('NIK')),
                                       DataColumn(label: Text('Alamat')),
@@ -210,6 +211,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
                                         }),
                                         cells: [
                                           DataCell(Text('${start + index + 1}')),
+                                          DataCell(Text(paginatedData[index]['tanggal'] ?? '')),
                                           DataCell(Text(
                                               paginatedData[index]['nama'] ?? '')),
                                           DataCell(Text(

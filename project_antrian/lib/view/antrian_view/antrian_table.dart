@@ -6,6 +6,7 @@ class AntrianDataTable extends StatelessWidget {
   final Function(List<Map<String, String>>) onRiwayatUpdate;
   final Function(int, String, String) onPanggilAntrian;
   final Function(int, String?) onStatusChanged;
+  final void Function(Map<String, String>)? onPrint; 
 
   const AntrianDataTable({
     required this.dataAntrian,
@@ -13,6 +14,7 @@ class AntrianDataTable extends StatelessWidget {
     required this.onRiwayatUpdate,
     required this.onPanggilAntrian,
     required this.onStatusChanged,
+    required this.onPrint
   });
 
   @override
@@ -67,6 +69,7 @@ class AntrianDataTable extends StatelessWidget {
         DataColumn(label: Text('Kategori')),
         DataColumn(label: Text('No HP')),
         DataColumn(label: Text('Status')),
+        DataColumn(label: Text('Cetak')), 
         DataColumn(label: Text('Aksi')),
       ],
       rows: List.generate(
@@ -98,6 +101,23 @@ class AntrianDataTable extends StatelessWidget {
                 ),
               ),
             ),
+            DataCell(
+  IconButton(
+    icon: const Icon(Icons.print, color: Color(0xFF292794)),
+    tooltip: 'Cetak Tiket',
+    onPressed: () {
+      debugPrint('print pressed');               // ← tes console
+      final item = {
+        ...dataAntrian[index],                   // semua data
+        'nomor': (index + 1).toString(),         // nomor urut
+        'layanan': dataAntrian[index]['layanan'] ??
+                   dataAntrian[index]['jenis_layanan'] ??
+                   '',
+      };
+      onPrint?.call(item);                       // WAJIB ada
+    },
+  ),
+),
             DataCell(
               IconButton(
                 icon: Icon(Icons.volume_up, color: Colors.deepPurple),
