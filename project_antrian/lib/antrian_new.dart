@@ -27,14 +27,26 @@ class _AntrianSaatIniPageState extends State<AntrianSaatIniPage> {
     load();
   }
 
-  pdf.PdfColor _parseHexColor(String? hex) {            // ← di‑prefiks
-  if (hex == null || hex.isEmpty) return pdf.PdfColors.white;
-  hex = hex.replaceFirst('#', '');
-  final r = int.parse(hex.substring(0, 2), radix: 16);
-  final g = int.parse(hex.substring(2, 4), radix: 16);
-  final b = int.parse(hex.substring(4, 6), radix: 16);
-  return pdf.PdfColor.fromInt(0xff000000 | (r << 16) | (g << 8) | b);
-}
+  pdf.PdfColor _parseHexColor(String? hex) {
+    if (hex == null || hex.isEmpty) return pdf.PdfColors.white;
+
+    hex = hex.replaceFirst('#', '');
+    // dukung format 3‑digit (#fff) → #ffffff
+    if (hex.length == 3) {
+      hex = hex.split('').map((c) => '$c$c').join();
+    }
+    // jika masih bukan 6 digit, pakai putih
+    if (hex.length != 6) return pdf.PdfColors.white;
+
+    try {
+      final r = int.parse(hex.substring(0, 2), radix: 16);
+      final g = int.parse(hex.substring(2, 4), radix: 16);
+      final b = int.parse(hex.substring(4, 6), radix: 16);
+      return pdf.PdfColor.fromInt(0xff000000 | (r << 16) | (g << 8) | b);
+    } catch (_) {
+      return pdf.PdfColors.white;
+    }
+  }
 
 
   Future<void> _printTicket(Map<String, String> item) async {
@@ -44,7 +56,7 @@ class _AntrianSaatIniPageState extends State<AntrianSaatIniPage> {
   final nomor = item['nomor'] ?? item['uuid']?.substring(0, 6).toUpperCase() ?? '???';
   final layanan = item['layanan']?.toUpperCase() ?? 'LAYANAN';
   final alasan = item['reason'] ?? '';
-  final warnaHex = item['color'] ?? '#000000';
+  final warnaHex = item['color'] ?? '#FFFFFF';
 
   final pdf.PdfColor penandaColor = _parseHexColor(warnaHex);
   final bool tampilBulatan = warnaHex.toUpperCase() != '#FFFFFF';

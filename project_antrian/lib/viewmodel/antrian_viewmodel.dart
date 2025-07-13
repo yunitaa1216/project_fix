@@ -69,7 +69,7 @@ class AntrianViewModel extends ChangeNotifier {
       'nik': e['nik']?.toString() ?? '',
       'alamat': e['alamat']?.toString() ?? '',
       'layanan': e['jenis_layanan']?.toString() ?? '',
-      'reason': e['reason']?.toString() ?? 'null',
+      'reason': e['reason']?.toString() ?? '',
       'noHp': e['telepon']?.toString() ?? '',
       'kategori': e['kategori']?.toString() ?? defaultKategori,
       'status': e['status']?.toString() ?? 'Menunggu',
