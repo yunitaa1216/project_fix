@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart'; 
 
 class AntrianViewModel extends ChangeNotifier {
   List<Map<String, String>> _antrian = [];
@@ -68,6 +69,12 @@ class AntrianViewModel extends ChangeNotifier {
   }
 
   Map<String, String> _mapQueueItem(dynamic e, String defaultKategori) {
+     final rawDate = (e['createdAt'] ?? e['date'])?.toString() ?? '';
+
+  // format → “dd/MM/yyyy HH:mm”
+  final formatted = rawDate.isNotEmpty
+      ? DateFormat('dd/MM/yyyy  HH:mm').format(DateTime.parse(rawDate))
+      : '';
     return {
       'uuid': e['uuid']?.toString() ?? '',
       'nama': e['nama']?.toString() ?? '',
@@ -77,6 +84,7 @@ class AntrianViewModel extends ChangeNotifier {
       'noHp': e['telepon']?.toString() ?? '',
       'kategori': e['kategori']?.toString() ?? defaultKategori,
       'status': e['status']?.toString() ?? 'Menunggu',
+      'tanggal'  : formatted,  
     };
   }
   Future<String?> _getToken() async {
@@ -92,54 +100,52 @@ class AntrianViewModel extends ChangeNotifier {
   required String telepon,
   required String jenisLayanan,
   required String kategori,
+  String? reason,
 }) async {
   final url = Uri.parse('http://localhost:3000/queue/create');
+  final token = await _getToken();
+
+  /* ────────────── bangun payload ────────────── */
+  final Map<String, dynamic> payload = {
+    'nama'          : nama,
+    'nik'           : nik,
+    'alamat'        : alamat,
+    'telepon'       : telepon,
+    'jenis_layanan' : jenisLayanan,
+    'kategori'      : kategori,
+  };
+
+  // backend mewajibkan reason HANYA ketika jenis layanan pembuatan ktp
+  if (jenisLayanan == 'pembuatan ktp') {
+    payload['reason'] = reason;                 // ⬅️ WAJIB ada
+  }
+  /* ──────────────────────────────────────────── */
 
   try {
-    final token = await _getToken();
     final response = await http.post(
       url,
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type' : 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({
-        'nama'         : nama,
-        'nik'          : nik,
-        'alamat'       : alamat,
-        'telepon'      : telepon,
-        'jenis_layanan': jenisLayanan,
-        'kategori'     : kategori,
-      }),
+      body: jsonEncode(payload),
     );
 
     debugPrint('Response status: ${response.statusCode}');
     debugPrint('Response body  : ${response.body}');
 
     if (response.statusCode == 201) {
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-
-      // ── Cari uuid di dua lokasi yang mungkin ────────────────────────────
-      String? uuid = data['uuid'] as String?;
-      if (uuid == null && data['response'] is Map) {
-        uuid = (data['response'] as Map)['uuid'] as String?;
-      }
-      // ────────────────────────────────────────────────────────────────────
-
-      if (uuid != null) {
-        debugPrint('✅ Berhasil tambah antrian; UUID = $uuid');
-        return uuid;      // ← sukses dengan uuid
-      } else {
-        debugPrint('ℹ️ Berhasil tambah antrian; server tak kirim uuid');
-        return null;      // ← sukses, tapi tanpa uuid
-      }
-    } else {
-      debugPrint('❌ Gagal tambah antrian, status code: ${response.statusCode}');
-      return null;
+      final data = jsonDecode(response.body);
+      // server Anda biasanya mengembalikan uuid langsung
+      return data['uuid']?.toString();
     }
-  } catch (e, stackTrace) {
-    debugPrint('Error tambah antrian: $e');
-    debugPrint('StackTrace: $stackTrace');
+
+    // log jika gagal
+    debugPrint('❌ Gagal tambah antrian, status: ${response.statusCode}');
+    return null;
+  } catch (e, s) {
+    debugPrint('❌ Exception tambahAntrianAPI: $e');
+    debugPrint('📍 $s');
     return null;
   }
 }

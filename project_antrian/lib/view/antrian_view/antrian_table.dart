@@ -19,32 +19,35 @@ class AntrianDataTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Colors.white,
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          bool isMobile = constraints.maxWidth < 800;
+  return Card(
+    color: Colors.white,
+    elevation: 4,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        final table = _buildDataTable();
 
-          return Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12.0),
-            child: isMobile
-                ? SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: IntrinsicWidth(
-                      child: _buildDataTable(),
-                    ),
-                  )
-                : _buildDataTable(),
-          );
-        },
-      ),
-    );
-  }
+        // --- GULIR VERTIKAL + HORIZONTAL ---
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12.0),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.vertical,     // ⬅️ gulir atas‑bawah
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal, // ⬅️ gulir kiri‑kanan
+              child: ConstrainedBox(
+                // pastikan lebar min. = lebar parent, supaya
+                // tabel tidak “mengecil” saat kolom sedikit
+                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                child: table,
+              ),
+            ),
+          ),
+        );
+      },
+    ),
+  );
+}
 
   Widget _buildDataTable() {
     final List<String> statusList = ['Menunggu', 'Proses', 'Selesai'];

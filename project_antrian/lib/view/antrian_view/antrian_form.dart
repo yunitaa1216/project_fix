@@ -69,12 +69,13 @@ class _AntrianFormState extends State<AntrianForm> {
     _autovalidateMode = AutovalidateMode.always;
   });
 
-  if (widget.selectedLayanan == 'pembuatan ktp' && (widget.selectedReason == null || widget.selectedReason!.isEmpty)) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Pilih alasan pembuatan KTP')),
-    );
-    return;
-  }
+  if (widget.selectedLayanan == 'pembuatan ktp' &&
+    (widget.selectedReason == null || widget.selectedReason!.isEmpty)) {
+  ScaffoldMessenger.of(context)
+      .showSnackBar(const SnackBar(content: Text('Pilih alasan pembuatan KTP')));
+  return;
+}
+
 
   if (_formKey.currentState!.validate()) {
     widget.onTambahPressed();
@@ -161,13 +162,6 @@ class _AntrianFormState extends State<AntrianForm> {
                       return null;
                     },
                   ),
-                  _buildDropdown(
-                    'Kategori Antrian',
-                    kategoriMap,
-                    widget.selectedKategori,
-                    widget.onKategoriChanged,
-                    icon: Icons.group,
-                  ),
                   if (widget.selectedLayanan == 'pembuatan ktp')
                     _buildDropdown(
                       'Alasan',
@@ -176,6 +170,14 @@ class _AntrianFormState extends State<AntrianForm> {
                       widget.onReasonChanged,
                       icon: Icons.help_outline,
                     ),
+                  _buildDropdown(
+                    'Kategori Antrian',
+                    kategoriMap,
+                    widget.selectedKategori,
+                    widget.onKategoriChanged,
+                    icon: Icons.group,
+                  ),
+                  
                 ],
               ),
               const SizedBox(height: 16),

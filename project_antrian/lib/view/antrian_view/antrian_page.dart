@@ -35,7 +35,7 @@ class _AntrianPageState extends State<AntrianPage> {
   
   String selectedKategori = 'umum';
 String selectedLayanan = 'pembuatan ktp';
-String? selectedReason; 
+String? selectedReason = 'perubahan data';
 
   List<Map<String, String>> dataAntrian = [];
   late List<Map<String, String>> dataRiwayat;
@@ -45,10 +45,10 @@ final FocusNode alamatFocus = FocusNode();
 final FocusNode nomorHpFocus = FocusNode();
 late AntrianViewModel viewModel;
 final List<String> alasanKTP = [              // ⬅️  NEW
-    'Perubahan Data',
-    'Rusak',
-    'Hilang',
-    'Luar Daerah',
+    'perubahan data',
+    'rusak',
+    'hilang',
+    'luar daerah',
   ];
 
 String _namaBulanIndonesia(int bulan) {
@@ -119,7 +119,8 @@ tanggalController.text = formattedDate;
     'telepon'      : nomorHpController.text,
     'jenis_layanan': selectedLayanan.toLowerCase(),
     'kategori'     : selectedKategori.toLowerCase(),
-    'reason'       : selectedReason ?? '',          // ← 1️⃣ kirim ke API
+    if (selectedLayanan == 'pembuatan ktp')   // kirim conditionally
+    'reason' : selectedReason,         // ← 1️⃣ kirim ke API
   };
 
   String? uuid = await viewModel.tambahAntrianAPI(
@@ -340,13 +341,23 @@ tanggalController.text = formattedDate;
             tanggalController: tanggalController,
             selectedLayanan: selectedLayanan,
             selectedKategori: selectedKategori,
-            onLayananChanged: (val) => setState(() => selectedLayanan = val!),
+            onLayananChanged: (val) => setState(() {
+  selectedLayanan = val!;
+  // kalau kembali ke pembuatan KTP tetapi reason masih null, pilih default
+  selectedReason = val == 'pembuatan ktp'
+      ? (selectedReason ?? alasanKTP.first)
+      : null;      // layanan lain → kosongkan reason
+}),
+
             onKategoriChanged: (val) => setState(() => selectedKategori = val!),
             onTambahPressed: tambahAntrian,
             namaFocus: namaFocus,
   nikFocus: nikFocus,
   alamatFocus: alamatFocus,
   nomorHpFocus: nomorHpFocus,
+  selectedReason : selectedReason,
+  alasanKTP      : alasanKTP,
+  onReasonChanged: (val) => setState(() => selectedReason = val),
           ),
           
         ],
